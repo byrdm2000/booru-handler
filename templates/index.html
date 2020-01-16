@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>blueberry's degen booru uploader</title>
+</head>
+
+<script>
+
+</script>
+
+<body>
+Let's upload some degeneracy!
+</body>
+
+<body>
+    <form action="/add_post" method="POST">
+        <input name="add_post" id="post_button" placeholder="Post ID">
+        <button>Add Post</button>
+    </form>
+    <form action="/add_pool" method="POST">
+        <input name="add_pool" id="pool_button" placeholder="Pool ID">
+        <button>Add Pool</button>
+    </form>
+</body>
+
+<div>
+
+</div>
+
+<body>Current degeneracy:</body>
+<form action="/del_post" method="POST">
+    <label for="post_select">Posts</label>
+    <select id="post_select" name="post_select">
+        {% for post in posts %}
+            <option value='{{ post }}'>{{ post }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" name="rem_post" value="Remove Post"/>
+</form>
+<form action="/del_pool" method="POST">
+    <label for="post_select">Pools</label>
+    <select id="pool_select" name="pool_select">
+        {% for pool in pools %}
+            <option value='{{ pool }}'>{{ pool }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" name="rem_pool" value="Remove Pool"/>
+</form>
+
+<body>Upload</body>
+    <form action="/upload" method="POST">
+        <input name="password" id="password" placeholder="Password">
+        <button>Upload!</button>
+    </form>
+
+</html>
