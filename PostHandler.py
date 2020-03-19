@@ -1,10 +1,11 @@
 from urllib import request
+import requests
 from time import sleep
 import json
 from config import Config
 
 base_url = Config.BASE_URL
-user_agent = "ePostGet/1.0 (by OnlyForBlacklist)"  # REQUIRED
+user_agent = "ePostGet/2.0 (by OnlyForBlacklist)"  # REQUIRED
 
 
 def json_request(api_call):
@@ -35,26 +36,23 @@ class Post(object):
 
     def get_info(self):
         """
-        Gets file info, such as url, ext, and md5
+        Gets file info, such as url, ext, and md5, and post tags
         """
+        file_info = json_request("/posts.json?tags=id:" + self.id).get('posts')[0]
         # Get request
-        post_info = json_request("/post/show.json?id=" + self.id)
+        post_info = file_info.get('file')
         # Update attributes
-        self.url = post_info.get('file_url')
-        self.ext = post_info.get('file_ext')
+        self.url = post_info.get('url')
+        self.ext = post_info.get('ext')
         self.md5 = post_info.get('md5')
-
-    def get_tags(self):
-        """
-        Gets tags for posts
-        """
-        # Get request
-        tag_info = json_request("/post/tags.json?id=" + self.id)
         # Process tags
-        prefix_lookup = {0: "", 1: "artist:", 3: "copyright:", 4: "character:", 5: "species:"}
-        for tag in tag_info:
-            prefix = prefix_lookup.get(tag.get('type'))
-            self.tags.add(prefix + tag.get('name'))
+        tag_info = file_info.get('tags')
+        for prefix, tags in tag_info.items():
+            for tag in tags:
+                if prefix != "general":
+                    self.tags.add(prefix + ":" + tag)
+                else:
+                    self.tags.add(tag)
 
     def save(self):
         """
@@ -63,14 +61,12 @@ class Post(object):
         if not self.url:  # minimum needed for saving posts
             self.get_info()
             sleep(1)
-        if not self.tags:
-            self.get_tags()
-            sleep(1)
         if not self.filename:
             filename = self.md5 + "." + self.ext
         else:
             filename = self.filename + "." + self.ext
-        request.urlretrieve(self.url, filename)
+        post_data = requests.get(self.url)
+        open(filename, 'wb').write(post_data.content)  # not on git, needs updated... eventually
         with open(filename + ".txt", "w") as tag_file:
             for tag in self.tags:
                 tag_file.write(tag + "\n")

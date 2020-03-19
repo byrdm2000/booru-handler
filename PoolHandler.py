@@ -1,30 +1,22 @@
-from urllib import request
 from time import sleep, strptime, time
 from calendar import timegm
-import xml.etree.ElementTree as ET
 from config import Config
 from PostHandler import json_request, download_posts
 
 base_url = Config.BASE_URL
-user_agent = "ePoolGet/1.0 (by OnlyForBlacklist)"  # REQUIRED
+user_agent = "ePoolGet/2.0 (by OnlyForBlacklist)"  # REQUIRED
 time_format = Config.TIME_FORMAT_STRING
-
-
-def xml_request(api_call):
-    """
-    Makes an XML request with specified API call and arguments
-    """
-    http_request = request.Request(base_url + api_call, data=None, headers={'User-Agent': user_agent})
-    with request.urlopen(http_request) as response:
-        encoded_xml = response.read().decode("utf-8")
-    return ET.fromstring(encoded_xml)
 
 
 def convert_time(time_string):
     """
     Converts time given from API to Unix time for easier comparisons
     """
-    return timegm(strptime(time_string, time_format))
+    date_time_string = time_string[:18]
+    timezone_string = time_string[23::]
+    timezone_string.replace(":", "")
+    new_time_string = date_time_string + timezone_string
+    return timegm(strptime(new_time_string, time_format))
 
 
 class Pool(object):
@@ -42,21 +34,14 @@ class Pool(object):
 
     def get_info(self):
         """
-        Gets all info for pool, excluding posts
+        Gets all info for pool
         """
-        pool_info = xml_request("/pool/show.xml?id=" + str(self.id))
+        pool_info = json_request("/pools.json?search[id]=" + str(self.id))[0]
         sleep(1)
-        self.name = pool_info.attrib['name']
-        self.last_updated = convert_time(pool_info.attrib['updated_at'])
-
-    def get_posts(self):
-        """
-        Gets all posts for pool
-        """
-        pool_post_info = json_request("/post/index.json?tags=pool:" + str(self.id))  # works as long as <= 320 pool posts
-        sleep(1)
-        for post in pool_post_info:
-            self.posts.append(post.get('id'))
+        self.name = pool_info.get('name')
+        self.last_updated = convert_time(pool_info.get('updated_at'))
+        for post in pool_info.get('post_ids'):
+            self.posts.append(post)
 
     def set_update_info(self, id_added, check_time):
         """
@@ -74,13 +59,12 @@ class Pool(object):
         if self.name is None or self.last_updated is None:  # fresh pool, needs added
             self.get_info()
         if not self.posts:
-            self.get_posts()
+            self.get_info()
         if last_id is None:
             if self.last_id is None:
                 last_id = 0
             else:
                 last_id = int(self.last_id)
-        # print("Last ID:", last_id)
         if last_id == 0:  # new pool, download all
             new_posts = self.posts
         elif max(self.posts) > last_id:  # means there are updates and list needs to be split
@@ -92,11 +76,12 @@ class Pool(object):
             new_posts = self.posts[:new_index]
         elif max(self.posts) == last_id:  # does not have updates
             new_posts = []
-        # print("New posts:", new_posts)
+
         # Create filename map based on pool_id and index
         name_map = {}
         for i in range(len(new_posts)):
             name_map[new_posts[i]] = str(self.id) + "_" + str(i)
+
         # Update and download
         self.set_update_info(max(self.posts), int(time()))
         download_posts(new_posts, filename_map=name_map)
