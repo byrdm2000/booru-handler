@@ -68,7 +68,9 @@ class Pool(object):
                 last_id = int(self.last_id)
         if last_id == 0:  # new pool, download all
             new_posts = self.posts
-        elif max(self.posts) > last_id:  # means there are updates and list needs to be split
+        elif min(self.posts) > last_id:  # means pool has had all of its posts replaced since last update
+            new_posts = self.posts
+        elif max(self.posts) > last_id > min(self.posts):  # means there are updates and list needs to be split
             new_index = len(self.posts) - 1  # if something goes wrong with finding index, default is to download all
             while self.posts[new_index] > last_id:
                 new_index -= 1
