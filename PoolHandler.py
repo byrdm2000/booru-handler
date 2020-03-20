@@ -79,8 +79,9 @@ class Pool(object):
 
         # Create filename map based on pool_id and index
         name_map = {}
+        pad_count = len(str(len(new_posts)))
         for i in range(len(new_posts)):
-            name_map[new_posts[i]] = str(self.id) + "_" + str(i)
+            name_map[new_posts[i]] = str(self.id) + "_" + str(i).rjust(pad_count, '0')
 
         # Update and download
         self.set_update_info(max(self.posts), int(time()))
