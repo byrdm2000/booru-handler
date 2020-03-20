@@ -70,15 +70,13 @@ class Pool(object):
             new_posts = self.posts
         elif max(self.posts) > last_id:  # means there are updates and list needs to be split
             new_index = len(self.posts) - 1  # if something goes wrong with finding index, default is to download all
-            while self.posts[new_index] > self.last_id:
-                print(self.posts[new_index])
+            while self.posts[new_index] > last_id:
                 new_index -= 1
             new_posts = self.posts[new_index + 1:]
         elif max(self.posts) == last_id:  # does not have updates
             new_posts = []
 
         # Create filename map based on pool_id and index
-        print(new_posts)
         name_map = {}
         pad_count = len(str(len(new_posts)))
         for i in range(len(new_posts)):
